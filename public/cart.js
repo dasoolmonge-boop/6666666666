@@ -98,8 +98,10 @@ const cart = {
 
         document.getElementById('cartTotalPrice').textContent = `${totalPrice} ₽`;
 
-        // Обновляем MainButton Telegram
-        if (this.items.length > 0) {
+        // Обновляем MainButton Telegram только если корзина не пуста, панель корзины закрыта и модалка не открыта
+        if (this.items.length > 0 && 
+            !document.getElementById('cartPanel').classList.contains('open') && 
+            !document.getElementById('checkoutModal').classList.contains('open')) {
             tg.MainButton.setText(`ОФОРМИТЬ ЗАКАЗ (${totalPrice} ₽)`);
             tg.MainButton.show();
             // Убираем предыдущий обработчик, чтобы не было дублирования
@@ -143,7 +145,50 @@ const cart = {
 // Инициализация корзины
 cart.loadFromStorage();
 
-// Обработка отправки формы заказа (УПРОЩЕННАЯ, БЕЗ ПРОВЕРКИ ТЕЛЕФОНА)
+// Функция открытия модального окна оформления заказа
+function openCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    const summary = document.getElementById('orderSummary');
+
+    // Скрываем кнопку Telegram
+    tg.MainButton.hide();
+
+    let summaryHtml = '<div class="summary-items">';
+    cart.items.forEach(item => {
+        summaryHtml += `
+            <div class="summary-item">
+                <span>${item.name} × ${item.quantity}</span>
+                <span>${item.price * item.quantity} ₽</span>
+            </div>
+        `;
+    });
+    summaryHtml += '</div>';
+    summaryHtml += `
+        <div class="summary-total">
+            <span>Итого:</span>
+            <span>${cart.getTotalPrice()} ₽</span>
+        </div>
+    `;
+
+    summary.innerHTML = summaryHtml;
+
+    // Автозаполнение данных пользователя Telegram
+    if (user.first_name) {
+        document.getElementById('name').value = user.first_name || '';
+    }
+    
+    if (user.username) {
+        // Можно добавить username куда-то, если нужно
+    }
+
+    modal.classList.add('open');
+
+    if (tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('medium');
+    }
+}
+
+// Обработка отправки формы заказа
 document.getElementById('orderForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -221,11 +266,36 @@ document.getElementById('orderForm').addEventListener('submit', async (e) => {
 // Закрытие модального окна
 document.getElementById('closeModal').addEventListener('click', () => {
     document.getElementById('checkoutModal').classList.remove('open');
+    // После закрытия модалки показываем кнопку, если корзина не пуста
+    if (cart.items.length > 0 && !document.getElementById('cartPanel').classList.contains('open')) {
+        tg.MainButton.show();
+    }
 });
 
 document.getElementById('checkoutModal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('checkoutModal')) {
         e.target.classList.remove('open');
+        // После закрытия модалки показываем кнопку, если корзина не пуста
+        if (cart.items.length > 0 && !document.getElementById('cartPanel').classList.contains('open')) {
+            tg.MainButton.show();
+        }
+    }
+});
+
+// Обработка открытия корзины
+document.getElementById('cartIcon').addEventListener('click', () => {
+    document.getElementById('cartPanel').classList.add('open');
+    // Скрываем кнопку Telegram при открытии корзины
+    tg.MainButton.hide();
+    cart.render();
+});
+
+// Закрытие корзины
+document.getElementById('closeCart').addEventListener('click', () => {
+    document.getElementById('cartPanel').classList.remove('open');
+    // После закрытия корзины показываем кнопку, если корзина не пуста и модалка не открыта
+    if (cart.items.length > 0 && !document.getElementById('checkoutModal').classList.contains('open')) {
+        tg.MainButton.show();
     }
 });
 
