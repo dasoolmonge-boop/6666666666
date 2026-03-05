@@ -56,7 +56,7 @@ function renderCakes(cakesArray) {
             <div class="cake-info">
                 <div class="cake-name">${cake.name}</div>
                 <div class="cake-weight">⚖️ ${cake.weight} кг</div>
-                <div class="cake-description" style="font-size: 13px; color: var(--tg-hint); margin: 8px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                <div class="cake-description">
                     ${cake.description}
                 </div>
                 <div class="cake-price-row">
@@ -140,9 +140,9 @@ async function checkAdmin() {
             },
             body: JSON.stringify({ userId: user.id })
         });
-
+        
         const data = await response.json();
-
+        
         if (data.isAdmin) {
             // Добавляем кнопку админки в шапку
             const header = document.querySelector('.header-content');
@@ -163,17 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCakes();
     checkAdmin();
 
-    // Обработка открытия корзины
-    document.getElementById('cartIcon').addEventListener('click', () => {
-        document.getElementById('cartPanel').classList.add('open');
-        cart.render();
-    });
-
-    // Закрытие корзины
-    document.getElementById('closeCart').addEventListener('click', () => {
-        document.getElementById('cartPanel').classList.remove('open');
-    });
-
     // Обработка категорий
     document.querySelectorAll('.category').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -182,15 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const category = btn.dataset.category;
             filterCakes(category);
         });
-    });
-
-    // Обработка кнопки оформления заказа
-    document.getElementById('checkoutBtn').addEventListener('click', () => {
-        if (cart.items.length === 0) {
-            showToast('Корзина пуста', 'warning');
-            return;
-        }
-        openCheckoutModal();
     });
 
     // Тактильная обратная связь
@@ -202,43 +182,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// Функция открытия модального окна оформления заказа
-function openCheckoutModal() {
-    const modal = document.getElementById('checkoutModal');
-    const summary = document.getElementById('orderSummary');
-
-    let summaryHtml = '<div class="summary-items">';
-    cart.items.forEach(item => {
-        summaryHtml += `
-            <div class="summary-item">
-                <span>${item.name} × ${item.quantity}</span>
-                <span>${item.price * item.quantity} ₽</span>
-            </div>
-        `;
-    });
-    summaryHtml += '</div>';
-    summaryHtml += `
-        <div class="summary-total">
-            <span>Итого:</span>
-            <span>${cart.getTotalPrice()} ₽</span>
-        </div>
-    `;
-
-    summary.innerHTML = summaryHtml;
-
-    // Автозаполнение данных пользователя Telegram
-    if (user.first_name) {
-        document.getElementById('name').value = user.first_name || '';
-    }
-
-    if (user.username) {
-        // Можно добавить username куда-то, если нужно
-    }
-
-    modal.classList.add('open');
-
-    if (tg.HapticFeedback) {
-        tg.HapticFeedback.impactOccurred('medium');
-    }
-}
